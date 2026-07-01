@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>＆me 肌診断</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #c47a8a;
+    --pink-light: #fdf2f5;
+    --pink-border: #f4c0d1;
+    --pink-dark: #993556;
+    --blue: #185fa5;
+    --blue-light: #f1f5ff;
+    --text: #1a1a1a;
+    --text-2: #555;
+    --text-3: #999;
+    --bg: #fafaf8;
+    --surface: #fff;
+    --border: rgba(0,0,0,0.1);
+    --border-soft: rgba(0,0,0,0.06);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 60px;
+  }
+  .app {
+    width: 100%;
+    max-width: 480px;
+  }
+  /* ヘッダー */
+  .logo {
+    text-align: center;
+    padding: 32px 0 28px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: .12em;
+    color: var(--text);
+  }
+  .logo span { color: var(--pink); }
+  .logo small {
+    display: block;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: var(--text-3);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+  /* プログレス */
+  .progress-wrap { margin-bottom: 32px; }
+  .progress-bar {
+    height: 2px;
+    background: var(--border-soft);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--pink);
+    border-radius: 2px;
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .step-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-align: center;
+    letter-spacing: .1em;
+  }
+  /* 質問 */
+  .q-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .q-sub {
+    font-size: 13px;
+    color: var(--text-3);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .multi-hint {
+    font-size: 11px;
+    color: var(--pink);
+    text-align: center;
+    margin-bottom: 14px;
+    letter-spacing: .05em;
+  }
+  /* 選択肢 */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt-btn {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color .15s, background .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .opt-btn:hover { border-color: var(--pink-border); background: var(--pink-light); }
+  .opt-btn:active { transform: scale(0.99); }
+  .opt-btn.selected {
+    border: 1.5px solid var(--pink);
+    background: var(--pink-light);
+  }
+  .opt-icon {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .opt-btn.selected .opt-icon { background: #fff; }
+  .opt-text { flex: 1; }
+  .opt-label { font-size: 14px; font-weight: 500; color: var(--text); }
+  .opt-desc { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+  .check-icon {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--pink);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity .2s, transform .2s;
+  }
+  .opt-btn.selected .check-icon { opacity: 1; transform: scale(1); }
+  .check-icon svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  /* ナビ */
+  .nav { display: flex; gap: 10px; margin-top: 24px; }
+  .btn-back {
+    flex: 1; padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-2);
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: background .15s;
+  }
+  .btn-back:hover { background: var(--bg); }
+  .btn-next {
+    flex: 2; padding: 13px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--pink);
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: opacity .15s, transform .1s;
+    letter-spacing: .05em;
+  }
+  .btn-next:disabled { opacity: .35; cursor: default; }
+  .btn-next:not(:disabled):hover { opacity: .9; }
+  .btn-next:not(:disabled):active { transform: scale(0.99); }
+
+  /* ===== 結果ページ ===== */
+  .result-header {
+    text-align: center;
+    padding: 8px 0 24px;
+    border-bottom: 1px solid var(--border-soft);
+    margin-bottom: 24px;
+  }
+  .result-emoji { font-size: 44px; margin-bottom: 14px; }
+  .skin-badge {
+    display: inline-block;
+    background: var(--pink-light);
+    color: var(--pink-dark);
+    border: 1px solid var(--pink-border);
+    border-radius: 20px;
+    padding: 5px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 14px;
+    letter-spacing: .04em;
+  }
+  .result-reason {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.8;
+  }
+  .section-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-3);
+    letter-spacing: .18em;
+    margin: 24px 0 12px;
+    text-transform: uppercase;
+  }
+  /* メニューカード */
+  .menu-card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .menu-card.primary { border-color: var(--pink-border); border-width: 1.5px; }
+  .menu-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    letter-spacing: .08em;
+  }
+  .tag-first { background: var(--pink-light); color: var(--pink-dark); }
+  .tag-second { background: var(--blue-light); color: var(--blue); }
+  .menu-name {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .menu-desc { font-size: 13px; color: var(--text-2); line-height: 1.8; margin-bottom: 12px; }
+  .effects { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .effect-pill {
+    font-size: 11px;
+    background: var(--bg);
+    color: var(--text-2);
+    padding: 4px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-soft);
+  }
+  .ing-box {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+  }
+  .ing-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-3);
+    letter-spacing: .1em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .ing-item {
+    display: flex;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .ing-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .ing-name { font-size: 12px; font-weight: 500; color: var(--text); min-width: 110px; flex-shrink: 0; }
+  .ing-desc { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+  /* コンボ理由 */
+  .combo-box {
+    background: var(--pink-light);
+    border: 1px solid var(--pink-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 20px 0;
+  }
+  .combo-title { font-size: 13px; font-weight: 500; color: var(--pink-dark); margin-bottom: 8px; }
+  .combo-desc { font-size: 13px; color: #7a3050; line-height: 1.8; }
+  /* ホームケア */
+  .homecare-card {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .homecare-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
+  .homecare-item {
+    font-size: 13px;
+    color: var(--text-2);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-soft);
+    line-height: 1.6;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .homecare-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .homecare-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--pink);
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+  /* CTA */
+  .cta-box {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+  .cta-msg {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.9;
+    margin-bottom: 16px;
+  }
+  .cta-btn {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background: var(--pink);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: .06em;
+    transition: opacity .15s;
+    margin-bottom: 10px;
+  }
+  .cta-btn:hover { opacity: .9; }
+  .restart-btn {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    background: transparent;
+    color: var(--text-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .restart-btn:hover { background: var(--bg); }
+  .cta-store-label { font-size: 12px; color: var(--text-3); text-align: center; margin-bottom: 8px; letter-spacing: .08em; }
+  .cta-store-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+  .cta-store-btn { flex: 1; padding: 11px 6px; background: var(--pink-light); color: var(--pink-dark); border: 1.5px solid var(--pink-border); border-radius: 30px; font-size: 12px; font-weight: 500; text-align: center; text-decoration: none; font-family: 'Noto Sans JP', sans-serif; display: block; }
+  .cta-store-btn:hover { background: var(--pink); color: #fff; }
+
+  /* MYREE レコメンド */
+  .myree-diag-banner{background:linear-gradient(135deg,#fdf5f7,#fff8f0);border:1px solid var(--pink-border);border-radius:var(--radius);padding:16px;margin-bottom:20px}
+  .myree-diag-title{font-size:14px;font-weight:500;color:var(--pink-dark);margin-bottom:2px}
+  .myree-diag-sub{font-size:11px;color:var(--text-3);margin-bottom:12px}
+  .myree-diag-products{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+  .myree-diag-product{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:12px;position:relative}
+  .myree-diag-badge{position:absolute;top:0;left:0;font-size:9px;font-weight:500;padding:3px 10px;border-radius:0 0 var(--radius-sm) 0;letter-spacing:.06em;color:#fff}
+  .badge-main{background:var(--pink)}
+  .badge-sub{background:var(--text-3)}
+  .myree-diag-img{width:72px;height:72px;object-fit:cover;border-radius:6px;flex-shrink:0;margin-top:8px}
+  .myree-diag-info{flex:1;min-width:0;margin-top:8px}
+  .myree-diag-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px;line-height:1.5}
+  .myree-diag-desc{font-size:11px;color:var(--text-3);line-height:1.6}
+  .myree-diag-note{font-size:10px;color:var(--text-3);text-align:center;padding-top:8px;border-top:1px solid var(--border-soft)}
+  .menu-list-btn {
+    display: block; width: 100%; padding: 13px;
+    background: transparent; color: var(--pink-dark);
+    border: 1.5px solid var(--pink-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer; margin-top: 10px;
+    transition: background .15s;
+  }
+  .menu-list-btn:hover { background: var(--pink-light); }
+  .menu-list-header {
+    text-align: center; padding: 8px 0 24px;
+    border-bottom: 1px solid var(--border-soft); margin-bottom: 24px;
+  }
+  .menu-list-header h2 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 6px;
+  }
+  .menu-list-header p { font-size: 13px; color: var(--text-3); line-height: 1.7; }
+  .menu-group-label {
+    font-size: 10px; font-weight: 500; color: var(--text-3);
+    letter-spacing: .18em; text-transform: uppercase;
+    margin: 20px 0 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .menu-group-label::after { content:''; flex:1; height:1px; background: var(--border-soft); }
+  .menu-detail-card {
+    background: var(--surface); border: 1px solid var(--border-soft);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 12px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .menu-detail-card:hover { border-color: var(--pink-border); }
+  .menu-detail-card.open { border-color: var(--pink-border); border-width: 1.5px; }
+  .menu-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .menu-detail-name { font-family: 'Noto Serif JP', serif; font-size: 17px; font-weight: 500; color: var(--text); }
+  .menu-detail-arrow {
+    width: 24px; height: 24px; flex-shrink: 0;
+    border-radius: 50%; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .25s, background .15s;
+  }
+  .menu-detail-card.open .menu-detail-arrow { transform: rotate(180deg); background: var(--pink-light); border-color: var(--pink-border); }
+  .menu-detail-arrow svg { width: 12px; height: 12px; stroke: var(--text-3); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .menu-detail-card.open .menu-detail-arrow svg { stroke: var(--pink); }
+  .menu-detail-body { display: none; margin-top: 14px; }
+  .menu-detail-card.open .menu-detail-body { display: block; }
+  .menu-detail-desc { font-size: 13px; color: var(--text-2); line-height: 1.8; margin-bottom: 12px; }
+  .worry-box {
+    background: var(--pink-light); border: 1px solid var(--pink-border);
+    border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px;
+  }
+  .worry-title { font-size: 11px; font-weight: 500; color: var(--pink-dark); margin-bottom: 8px; letter-spacing: .05em; }
+  .worry-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .worry-tag {
+    font-size: 12px; background: #fff; color: var(--pink-dark);
+    border: 1px solid var(--pink-border); padding: 4px 12px; border-radius: 10px;
+  }
+  .detail-ing-box { background: var(--bg); border-radius: var(--radius-sm); padding: 12px; }
+  .back-to-result-btn {
+    display: block; width: 100%; padding: 13px;
+    background: var(--pink); color: #fff; border: none;
+    border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif; cursor: pointer; margin-top: 24px;
+    transition: opacity .15s;
+  }
+  .back-to-result-btn:hover { opacity: .9; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .fade-up { animation: fadeUp .3s ease both; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="logo">
+    &amp;<span>me</span>
+    <small>SKIN DIAGNOSIS</small>
+  </div>
+  <div id="quiz-area"></div>
+</div>
+
+<script>
+const questions = [
+  {
+    id:'concern', title:'今、一番気になる\n肌の悩みは？', sub:'最も当てはまるものを1つ選んでください', multi:false,
+    options:[
+      {icon:'💧', label:'乾燥・カサつき',       desc:'肌がつっぱる、粉をふく'},
+      {icon:'⚫', label:'毛穴の黒ずみ・詰まり',  desc:'毛穴に皮脂が詰まる、黒ずみが気になる'},
+      {icon:'🕳', label:'毛穴の開き・たるみ毛穴', desc:'毛穴が目立つ、肌のキメが粗い'},
+      {icon:'✨', label:'くすみ・トーンダウン',   desc:'肌色がくすむ、透明感がない'},
+      {icon:'💫', label:'ハリ・ツヤ',            desc:'ツヤがない、肌のもちもち感が減った'},
+      {icon:'📉', label:'たるみ・ほうれい線',     desc:'フェイスラインがもたつく、ほうれい線が深くなった'},
+      {icon:'🔴', label:'ニキビ・吹き出物',       desc:'繰り返すニキビ、肌荒れ'},
+      {icon:'🌫', label:'シミ・色素沈着',         desc:'日焼けあと、くすみが取れない'},
+    ]
+  },
+  {
+    id:'goal', title:'理想の肌質は？', sub:'なりたい肌のイメージを選んでください', multi:false,
+    options:[
+      {icon:'💎', label:'ツヤ・透明感のある肌', desc:'光を反射するような澄んだ肌'},
+      {icon:'🥚', label:'なめらか・均一な肌',   desc:'毛穴レスで触り心地なめらか'},
+      {icon:'🌸', label:'もちもち・ぷるぷる肌', desc:'水分たっぷりの弾力ある肌'},
+      {icon:'🧘', label:'健やかで安定した肌',   desc:'肌トラブルなく、いつも整ったコンディションをキープ'},
+    ]
+  },
+  {
+    id:'skin_type', title:'普段の肌質を\n教えてください', sub:'', multi:false,
+    options:[
+      {icon:'🌊', label:'乾燥肌',           desc:'全体的に乾燥しやすい'},
+      {icon:'🛢', label:'脂性肌（オイリー）', desc:'テカリ・べたつきが気になる'},
+      {icon:'⚖️', label:'混合肌',           desc:'Tゾーンのみ脂っぽい'},
+      {icon:'🌿', label:'普通肌',           desc:'特に気にならない'},
+      {icon:'🌹', label:'敏感肌',           desc:'刺激に敏感、すぐ赤くなる'},
+    ]
+  },
+  {
+    id:'age', title:'年代を教えてください', sub:'', multi:false,
+    options:[
+      {icon:'🌱', label:'10〜20代', desc:''},
+      {icon:'🌿', label:'30代',     desc:''},
+      {icon:'🌳', label:'40代',     desc:''},
+      {icon:'🍂', label:'50代以上', desc:''},
+    ]
+  },
+  {
+    id:'season', title:'肌の調子が乱れやすい\n季節・環境は？', sub:'複数選べます', multi:true,
+    options:[
+      {icon:'❄️', label:'冬の乾燥',   desc:'暖房で乾燥がひどい'},
+      {icon:'☀️', label:'夏のUV・汗', desc:'日焼け・テカリが気になる'},
+      {icon:'🌸', label:'花粉・春先', desc:'肌荒れしやすい'},
+      {icon:'🏙', label:'年中乾燥',   desc:'季節を問わず乾燥する'},
+      {icon:'🔴', label:'生理前後にニキビができやすい', desc:'ホルモンバランスの乱れで定期的に肌荒れ'},
+      {icon:'😣', label:'継続的にニキビができやすい',   desc:'常にニキビ・吹き出物がある状態'},
+    ]
+  },
+  {
+    id:'care_freq', title:'普段の肌のお手入れ\n頻度を教えてください', sub:'', multi:false,
+    options:[
+      {icon:'✨', label:'毎日しっかりケアしている', desc:'洗顔・化粧水・美容液など毎日欠かさない'},
+      {icon:'🌿', label:'基本的なケアはしている', desc:'洗顔・化粧水程度は毎日行っている'},
+      {icon:'😅', label:'ときどきサボってしまう', desc:'忙しいと省略することがある'},
+      {icon:'🌱', label:'あまりケアできていない', desc:'スキンケアの習慣がほとんどない'},
+    ]
+  }
+];
+
+const menuDB = {
+  // ── メニュー1グループ（ピーリング系）──
+  lara_peel: {
+    name:'ララピール',
+    group: 1,
+    desc:'独自のラクトビオン酸配合ピーリングで、角質を穏やかに除去しながら同時に高い保湿効果を発揮。刺激が少なく敏感肌にも対応できるのが特徴です。',
+    effects:['角質ケア','保湿','くすみ改善','敏感肌OK'],
+    ingredients:[
+      {name:'ラクトビオン酸', desc:'ポリヒドロキシ酸（PHA）の一種。緩やかな角質除去＋抗酸化作用'},
+      {name:'ヒアルロン酸', desc:'肌内部まで水分を届ける高保湿成分'},
+      {name:'ビタミンC誘導体', desc:'メラニン生成を抑え、透明感をサポート'},
+    ]
+  },
+  sera_peel: {
+    name:'セラピール',
+    group: 1,
+    desc:'セラミド配合の低刺激ピーリングで、肌バリア機能を補いながら角質ケアを行います。乾燥しやすい肌や肌荒れが気になる方に特に効果的です。',
+    effects:['バリア補修','保湿','角質ケア','乾燥改善'],
+    ingredients:[
+      {name:'セラミド', desc:'肌バリアの主成分。水分蒸発を防ぎ肌を守る'},
+      {name:'乳酸', desc:'穏やかなAHAで古い角質を除去'},
+      {name:'ナイアシンアミド', desc:'くすみ改善・毛穴引き締め・肌トーンUP'},
+    ]
+  },
+  herb_peel: {
+    name:'ハーブピーリング',
+    group: 1,
+    desc:'天然ハーブ由来の成分で肌の深部にアプローチ。強力なターンオーバー促進作用で、シミ・くすみ・毛穴・ニキビ跡など幅広い悩みを改善します。',
+    effects:['ターンオーバー促進','シミ改善','毛穴改善','リフトアップ'],
+    ingredients:[
+      {name:'ハーブ植物エキス', desc:'複数の天然ハーブが相乗効果で肌を活性化'},
+      {name:'サリチル酸', desc:'BHAの一種。毛穴の皮脂づまりを溶かす'},
+      {name:'レチノール誘導体', desc:'コラーゲン産生促進・シワ・ハリ改善'},
+    ]
+  },
+  // ── メニュー2グループ（導入・洗浄系）──
+  pore_cleanse: {
+    name:'毛穴洗浄',
+    group: 2,
+    desc:'専用機器で毛穴の奥の皮脂・汚れを吸引除去。施術後はスキンケアの浸透率が大幅にUPし、後続の施術効果を最大限に引き出します。',
+    effects:['毛穴洗浄','皮脂除去','浸透率UP','毛穴引き締め'],
+    ingredients:[
+      {name:'ウォータージェット', desc:'水流で毛穴を丁寧に洗浄'},
+      {name:'サリチル酸溶液', desc:'毛穴内の角栓を溶かして除去を促進'},
+      {name:'ツボクサエキス', desc:'洗浄後の赤みを鎮静・肌を落ち着かせる'},
+    ]
+  },
+  ldm: {
+    name:'LDM（超音波導入）',
+    group: 2,
+    desc:'局所動態マイクロマッサージ（LDM）テクノロジーにより、超音波で細胞を活性化。炎症を鎮め、肌のターンオーバーを促進します。',
+    effects:['炎症鎮静','肌再生','保湿','コラーゲン産生促進'],
+    ingredients:[
+      {name:'超音波（8MHz）', desc:'深部まで届く高周波でコラーゲン産生を刺激'},
+      {name:'成長因子', desc:'肌細胞の修復・再生をサポートする生体成分'},
+      {name:'ヒアルロン酸', desc:'超音波導入で奥まで届く保湿効果'},
+    ]
+  }
+};
+
+// ── 診断ロジック ──
+// メニュー1：ララピール／セラピール／ハーブピーリング
+// メニュー2：毛穴洗浄／LDM
+// 毛穴の開き → 毛穴洗浄NG（LDM固定）
+// ハリ・ツヤ  → LDM + ララピール or セラピール
+// たるみ・ほうれい線 → LDM優先
+const diagnose = (ans) => {
+  const c = ans.concern, t = ans.skin_type, freq = ans.care_freq;
+  const season = ans.season || '';
+  let m1key, m2key, skinName, skinEmoji, reason, comboReason, homecare;
+
+  // ── メニュー2の選定 ──
+  // 毛穴の開き は洗浄刺激NG → LDM固定
+  // ハリ・ツヤ／たるみ・ほうれい線 → LDM優先
+  // 脂性・混合肌 or ケア不足 → 毛穴洗浄
+  // それ以外 → LDM
+  if(c==='毛穴の開き・たるみ毛穴' || c==='ハリ・ツヤ' || c==='たるみ・ほうれい線'){
+    m2key = 'ldm';
+  } else {
+    const needsPoreClean = (t==='脂性肌（オイリー）' || t==='混合肌' || freq==='ときどきサボってしまう' || freq==='あまりケアできていない');
+    m2key = needsPoreClean ? 'pore_cleanse' : 'ldm';
+  }
+
+  // ── メニュー1の選定：悩みで決定 ──
+  if(c==='毛穴の黒ずみ・詰まり'){
+    m1key='herb_peel';
+    skinName='毛穴・黒ずみ肌'; skinEmoji='⚫';
+    reason='毛穴の皮脂づまり・黒ずみをハーブの力でターンオーバーを促進しながら根本からケア。詰まりにくい肌へ整えます。';
+    comboReason= m2key==='pore_cleanse'
+      ? '毛穴洗浄で皮脂・角栓をしっかり除去してからハーブピーリングを行うことで、有効成分が深部まで浸透。黒ずみの改善と毛穴の引き締まりをダブルで狙います。'
+      : 'LDMで毛穴周辺の炎症を抑えながら、ハーブピーリングでターンオーバーを促進。詰まりにくく目立たない毛穴へと整えます。';
+    homecare=['洗顔はぬるま湯で丁寧に、すすぎは十分に','ビタミンC配合の化粧水で毛穴ケアをサポート','週1回の酵素洗顔で角栓を予防','SPF50以上の日焼け止めを毎日使用'];
+
+  } else if(c==='毛穴の開き・たるみ毛穴'){
+    // 毛穴洗浄NG → LDM固定 + ハーブピーリング
+    m1key='herb_peel'; m2key='ldm';
+    skinName='毛穴の開き・たるみ毛穴肌'; skinEmoji='🕳';
+    reason='毛穴の開きはコラーゲン不足によるたるみが原因のことが多いです。LDMで深部からハリを補い、ハーブピーリングで肌を引き締めます。';
+    comboReason='毛穴の開きには洗浄よりも「引き締め・ハリ補強」が重要です。LDMで超音波刺激によりコラーゲン産生を促し、ハーブピーリングでターンオーバーを整えることで毛穴が目立たない肌へ。';
+    homecare=['洗顔は優しく、こすらない','収れん化粧水で毛穴を引き締める習慣を','ナイアシンアミド配合の美容液で毛穴ケア','紫外線がたるみ毛穴の原因に。SPF50+を毎日'];
+
+  } else if(c==='ハリ・ツヤ'){
+    // LDM + ララピール or セラピール（肌タイプで判断）
+    m1key = (t==='乾燥肌'||t==='敏感肌') ? 'sera_peel' : 'lara_peel';
+    m2key='ldm';
+    skinName='ハリ・ツヤ不足肌'; skinEmoji='💫';
+    reason='LDMでコラーゲン産生を促しながら、ピーリングで肌表面を整えてツヤとハリを同時にアプローチします。';
+    comboReason='ハリ・ツヤの改善には「細胞の活性化＋表面のリセット」がポイント。LDMの超音波で線維芽細胞を刺激し、' + (m1key==='sera_peel' ? 'セラピールで肌バリアを整えながら角質ケア。' : 'ララピールで穏やかに角質を除去。') + 'もちっとツヤのある肌へ近づけます。';
+    homecare=['ビタミンC・レチノール配合の美容液を夜のケアに','化粧水後すぐ美容液で栄養補給を','睡眠中に成長ホルモンが出るので7時間以上の睡眠を','首・デコルテも一緒にツヤケアする習慣を'];
+
+  } else if(c==='たるみ・ほうれい線'){
+    // LDM固定 + ハーブピーリング
+    m1key='herb_peel'; m2key='ldm';
+    skinName='たるみ・ほうれい線が気になる肌'; skinEmoji='📉';
+    reason='LDMの超音波でコラーゲン産生を深部から促し、ハーブピーリングでターンオーバーを正常化。フェイスラインを内側から引き上げます。';
+    comboReason='たるみ・ほうれい線には「コラーゲンを増やす＋古い細胞を入れ替える」アプローチが効果的。LDMで線維芽細胞を活性化し、ハーブピーリングで肌のリニューアルを促すことで、継続するほど引き締まった印象へ変わっていきます。';
+    homecare=['レチノール・ナイアシンアミド配合の美容液を夜に使用','首・デコルテも一緒にケアする習慣を','糖化を防ぐため砂糖の摂りすぎを控える','フェイスラインのリンパマッサージを日課に'];
+
+  } else if(c==='くすみ・トーンダウン'||c==='シミ・色素沈着'){
+    m1key='lara_peel';
+    skinName='くすみ・色素沈着肌'; skinEmoji='🌫';
+    reason='ラクトビオン酸で穏やかに古い角質を除去し、メラニン排出を促進。透明感あふれる明るい肌へ導きます。';
+    comboReason= m2key==='pore_cleanse'
+      ? '毛穴洗浄で肌の通り道を整えてからララピールを行うことで、美白・透明感成分が肌の奥まで浸透。くすみの原因を内側から一掃します。'
+      : 'LDMで肌細胞を活性化させた上にララピールで角質ケアを重ねることで、トーンアップ効果が引き出されます。数回の施術で「明るくなった」と実感できます。';
+    homecare=['ビタミンC誘導体・ナイアシンアミド配合の美容液を取り入れる','紫外線対策は年中必須（SPF50+）','睡眠をしっかり取りターンオーバーをサポート','アルコール・刺激物を控え肌を安定させる'];
+
+  } else if(c==='ニキビ・吹き出物'){
+    m1key='sera_peel';
+    skinName='ニキビ・炎症肌'; skinEmoji='🔴';
+    reason='セラピールでバリア機能を補強しながら穏やかに角質ケア。ニキビが繰り返しにくい安定した肌づくりを目指します。';
+    comboReason= m2key==='pore_cleanse'
+      ? '毛穴洗浄で詰まりの原因を除去してからセラピールでバリアを補修することで、ニキビの再発を防ぎながら肌を整えます。'
+      : 'LDMで炎症を鎮静させ、セラピールでセラミドを補充してバリアを強化。肌への負担を最小限に抑えながら改善を積み重ねます。';
+    homecare=['洗顔は泡立てネットを使い優しく丁寧に','ノンコメドジェニックのスキンケアを選ぶ','糖質・乳製品の摂りすぎに注意','枕カバーを週1で洗濯する'];
+
+  } else {
+    // 乾燥・カサつき がデフォルト
+    m1key='lara_peel';
+    skinName='乾燥・インナードライ肌'; skinEmoji='💧';
+    reason='ララピールで穏やかに角質ケアしながら保湿を補給。乾燥に強い肌のベースをつくります。';
+    comboReason= m2key==='pore_cleanse'
+      ? '毛穴洗浄でスキンケアの浸透を妨げる汚れを除去してからララピールで保湿ケアを重ねることで、水分を逃がさない肌土台を育てます。'
+      : 'LDMで細胞を活性化し肌の保水力を高めながら、ララピールで古い角質を除去。うるおいが奥まで届くようになり、乾燥しにくい肌へと変わっていきます。';
+    homecare=['化粧水後すぐに乳液・クリームで蓋をする','セラミド・ヒアルロン酸配合の保湿剤を使う','長湯・熱いお風呂は肌の水分を奪うので注意','加湿器で室内の湿度を50〜60%に保つ'];
+  }
+  return { skinName, skinEmoji, reason, comboReason, homecare,
+    m1: menuDB[m1key], m2: menuDB[m2key] };
+};
+
+// ── MYREE 商品データ ──
+const MYREE_DB = {
+  oil:  { name:'クレンジングオイル', desc:'毛穴の皮脂・メイク汚れをやさしくオフ。毛穴詰まり・黒ずみケアに',
+          img:'https://myree.jp/cdn/shop/products/cl0002_01_550x550.jpg?v=1647390664', url:'https://myree.jp/products/cleansing-oil' },
+  balm: { name:'クレンジングバーム', desc:'しっとりなめらか。乾燥肌・敏感肌向きのやさしい洗い上がり',
+          img:'https://myree.jp/cdn/shop/products/cl0003_01_550x550.jpg?v=1647390663', url:'https://myree.jp/products/cleansing-balm' },
+  milk: { name:'クレンジングミルク', desc:'低刺激でマイルドな洗い上がり。敏感肌・ニキビ肌の毎日使いに',
+          img:'https://myree.jp/cdn/shop/products/cl0001_01_550x550.jpg?v=1647390663', url:'https://myree.jp/products/cleansing-milk' },
+  pack: { name:'薬用美白クレイパック', desc:'くすみ・色素沈着をリセット。毛穴の汚れも吸着する週1〜2回の集中ケアに',
+          img:'https://myree.jp/cdn/shop/products/cl0004_01_550x550.jpg?v=1647390670', url:'https://myree.jp/products/clay-pack' },
+  mist: { name:'ミスト美容液', desc:'日中のうるおい補給・化粧崩れ防止に。いつでも手軽に保湿ケア',
+          img:'https://myree.jp/cdn/shop/products/cl0005_01_550x550.jpg?v=1647390670', url:'https://myree.jp/products/mist-toner' },
+};
+
+// 肌悩み別レコメンド
+function getMYREEBySkin(concern, skinType){
+  const c = concern || '';
+  const t = skinType || '';
+  if(c.includes('毛穴') || c.includes('黒ずみ'))     return { main: MYREE_DB.oil,  sub: MYREE_DB.mist };
+  if(c.includes('くすみ') || c.includes('シミ'))      return { main: MYREE_DB.pack, sub: MYREE_DB.mist };
+  if(c.includes('ニキビ') || c.includes('吹き出物'))  return { main: MYREE_DB.milk, sub: MYREE_DB.mist };
+  if(c.includes('乾燥') || t.includes('乾燥'))        return { main: MYREE_DB.mist, sub: MYREE_DB.balm };
+  if(c.includes('ハリ') || c.includes('たるみ'))      return { main: MYREE_DB.pack, sub: MYREE_DB.mist };
+  if(t.includes('敏感'))                              return { main: MYREE_DB.balm, sub: MYREE_DB.milk };
+  return { main: MYREE_DB.mist, sub: MYREE_DB.oil };
+}
+
+function myreeDiagCard(p, badge, badgeClass){
+  return `
+    <div class="myree-diag-product">
+      <div class="myree-diag-badge ${badgeClass}">${badge}</div>
+      <img class="myree-diag-img" src="${p.img}" alt="${p.name}">
+      <div class="myree-diag-info">
+        <div class="myree-diag-name">MYREE ${p.name}</div>
+        <div class="myree-diag-desc">${p.desc}</div>
+      </div>
+    </div>`;
+}
+
+let current = 0, answers = {}, multiSel = {};
+
+function renderQ(idx){
+  const q = questions[idx];
+  const pct = Math.round((idx / questions.length) * 100);
+  if(q.multi && !multiSel[q.id]) multiSel[q.id] = new Set();
+
+  let optHTML = q.options.map((o,i) => {
+    const sel = q.multi ? multiSel[q.id].has(o.label) : answers[q.id]===o.label;
+    return `<button class="opt-btn${sel?' selected':''} fade-up"
+      style="animation-delay:${i*0.05}s"
+      onclick="pick('${q.id}','${o.label}',${q.multi},this)">
+      <div class="opt-icon">${o.icon}</div>
+      <div class="opt-text">
+        <div class="opt-label">${o.label}</div>
+        ${o.desc?`<div class="opt-desc">${o.desc}</div>`:''}
+      </div>
+      <div class="check-icon">
+        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+      </div>
+    </button>`;
+  }).join('');
+
+  const hasAns = q.multi ? (multiSel[q.id].size > 0) : !!answers[q.id];
+  document.getElementById('quiz-area').innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="step-label">${idx+1} / ${questions.length}</div>
+    </div>
+    <div class="q-title fade-up" style="white-space:pre-line">${q.title}</div>
+    ${q.sub?`<div class="q-sub">${q.sub}</div>`:''}
+    ${q.multi?'<div class="multi-hint">複数選択できます</div>':''}
+    <div class="options">${optHTML}</div>
+    <div class="nav">
+      ${idx>0?'<button class="btn-back" onclick="goBack()">← 戻る</button>':''}
+      <button class="btn-next" id="nb" ${hasAns?'':'disabled'} onclick="goNext()">
+        ${idx<questions.length-1?'次へ →':'診断結果を見る →'}
+      </button>
+    </div>
+  `;
+}
+
+function pick(qid, label, isMulti, el){
+  if(isMulti){
+    if(!multiSel[qid]) multiSel[qid]=new Set();
+    if(multiSel[qid].has(label)){ multiSel[qid].delete(label); el.classList.remove('selected'); }
+    else { multiSel[qid].add(label); el.classList.add('selected'); }
+    document.getElementById('nb').disabled = multiSel[qid].size===0;
+  } else {
+    answers[qid]=label;
+    document.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('nb').disabled=false;
+  }
+}
+
+function goNext(){
+  const q=questions[current];
+  if(q.multi) answers[q.id]=[...multiSel[q.id]].join('・');
+  current++;
+  if(current>=questions.length) showResult();
+  else renderQ(current);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goBack(){ if(current>0){ current--; renderQ(current); window.scrollTo({top:0,behavior:'smooth'}); } }
+
+function menuCard(m, tag, tagLabel){
+  return `<div class="menu-card ${tag==='first'?'primary':''}">
+    <span class="menu-tag ${tag==='first'?'tag-first':'tag-second'}">${tagLabel}</span>
+    <div class="menu-name">${m.name}</div>
+    <div class="menu-desc">${m.desc}</div>
+    <div class="effects">${m.effects.map(e=>`<span class="effect-pill">${e}</span>`).join('')}</div>
+    <div class="ing-box">
+      <div class="ing-title">主な成分・アプローチ</div>
+      ${m.ingredients.map(i=>`<div class="ing-item"><div class="ing-name">${i.name}</div><div class="ing-desc">${i.desc}</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function showResult(){
+  const r = diagnose(answers);
+  const skinType = answers['skin_type'] || '';
+  const concern  = answers['concern']   || '';
+  const myreeRec = getMYREEBySkin(concern, skinType);
+  document.getElementById('quiz-area').innerHTML = `
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+      <div class="step-label">診断完了</div>
+    </div>
+    <div class="result-header fade-up">
+      <div class="result-emoji">${r.skinEmoji}</div>
+      <div class="skin-badge">${r.skinName}</div>
+      <div class="result-reason">${r.reason}</div>
+    </div>
+    <div class="section-label">おすすめメニュー</div>
+    ${menuCard(r.m1,'first','1st メニュー')}
+    ${menuCard(r.m2,'second','2nd メニュー')}
+    <div class="combo-box">
+      <div class="combo-title">この組み合わせがおすすめな理由</div>
+      <div class="combo-desc">${r.comboReason}</div>
+    </div>
+    <div class="section-label">ホームケアアドバイス</div>
+    <div class="homecare-card">
+      <div class="homecare-title">サロンケアをもっと活かすために</div>
+      ${r.homecare.map(h=>`<div class="homecare-item"><div class="homecare-dot"></div><div>${h}</div></div>`).join('')}
+    </div>
+    <div class="myree-diag-banner">
+      <div class="myree-diag-title">💄 あなたの肌におすすめのMYREEアイテム</div>
+      <div class="myree-diag-sub">診断結果をもとに自動セレクト</div>
+      <div class="myree-diag-products">
+        ${myreeDiagCard(myreeRec.main, 'おすすめ', 'badge-main')}
+        ${myreeDiagCard(myreeRec.sub,  'あわせて', 'badge-sub')}
+      </div>
+      <div class="myree-diag-note">🌸 サロン限定販売の商品です</div>
+    </div>
+    <div class="cta-box">
+      <div class="cta-msg">肌管理は続けることで変化が現れます。<br>まずは1ヶ月、一緒に取り組んでみませんか？</div>
+      <div class="cta-store-label">ご予約はこちらから</div>
+      <div class="cta-store-btns">
+        <a class="cta-store-btn" href="https://beauty.hotpepper.jp/kr/slnH000809696/" target="_blank">吉祥寺店</a>
+        <a class="cta-store-btn" href="https://beauty.hotpepper.jp/kr/slnH000797106/" target="_blank">高崎店</a>
+        <a class="cta-store-btn" href="https://beauty.hotpepper.jp/kr/slnH000797108/" target="_blank">神戸元町店</a>
+      </div>
+      <button class="menu-list-btn" onclick="showMenuList()">📋 メニューについて詳しく知る</button>
+      <button class="restart-btn" onclick="restart()">もう一度診断する</button>
+    </div>
+  `;
+}
+
+// ── メニュー全件データ（悩みタグ付き）──
+const menuListData = [
+  {
+    group: 1, groupLabel: 'MENU 1 — ピーリング系',
+    items: [
+      {
+        name: 'ララピール',
+        desc: '独自のラクトビオン酸（PHA）配合ピーリング。肌への刺激が少なく、角質を穏やかに取り除きながら同時に高い保湿効果を発揮します。敏感肌の方でも安心してお受けいただけます。',
+        worries: ['乾燥・カサつき', 'くすみ・トーンダウン', 'シミ・色素沈着', '敏感肌の方', '初めてのピーリング'],
+        ingredients: [
+          {name:'ラクトビオン酸', desc:'PHAの一種。緩やかな角質除去＋高い保湿・抗酸化作用'},
+          {name:'ヒアルロン酸', desc:'肌内部まで水分を届ける高保湿成分'},
+          {name:'ビタミンC誘導体', desc:'メラニン生成を抑制し透明感をサポート'},
+        ]
+      },
+      {
+        name: 'セラピール',
+        desc: 'セラミドを豊富に配合した低刺激ピーリング。角質ケアと同時に肌バリア機能を補修するので、乾燥・ニキビ・肌荒れが繰り返しやすい方に特におすすめです。',
+        worries: ['乾燥・インナードライ', 'ニキビ・吹き出物', '肌荒れ・バリア低下', '敏感肌・赤みが出やすい'],
+        ingredients: [
+          {name:'セラミド', desc:'肌バリアの主成分。水分蒸発を防ぎ外部刺激から肌を守る'},
+          {name:'乳酸', desc:'穏やかなAHAで古い角質をやさしく除去'},
+          {name:'ナイアシンアミド', desc:'くすみ改善・毛穴引き締め・肌トーンUP'},
+        ]
+      },
+      {
+        name: 'ハーブピーリング',
+        desc: '天然ハーブ由来の成分が肌の深部にアプローチ。強力なターンオーバー促進作用で、シミ・くすみ・毛穴・ニキビ跡など複合的な悩みを根本から改善します。即効性が高く変化を実感しやすいメニューです。',
+        worries: ['毛穴・黒ずみ', 'ハリ・たるみ', 'シミ・ニキビ跡', 'くすみ・トーンダウン', 'しっかり効果を感じたい'],
+        ingredients: [
+          {name:'ハーブ植物エキス', desc:'複数の天然ハーブが相乗効果で肌を活性化・再生促進'},
+          {name:'サリチル酸', desc:'BHAの一種。毛穴の皮脂づまりを溶かしてスッキリ除去'},
+          {name:'レチノール誘導体', desc:'コラーゲン産生促進・シワ・ハリ・弾力改善'},
+        ]
+      },
+    ]
+  },
+  {
+    group: 2, groupLabel: 'MENU 2 — 導入・洗浄系',
+    items: [
+      {
+        name: '毛穴洗浄',
+        desc: '専用機器で毛穴の奥に詰まった皮脂・古い角質・汚れを吸引除去。肌のキメを整え、後続のピーリング施術の浸透率を大幅にUPさせる「土台づくり」のメニューです。',
+        worries: ['毛穴・黒ずみ', '皮脂・テカリが多い', 'スキンケアが浸透しにくい', '混合肌・脂性肌', 'ケア習慣がまだない'],
+        ingredients: [
+          {name:'ウォータージェット', desc:'水流の圧力で毛穴を内側から丁寧に洗浄'},
+          {name:'サリチル酸溶液', desc:'毛穴内の角栓を溶かして除去を促進するBHA成分'},
+          {name:'ツボクサエキス', desc:'洗浄後の赤みを鎮静し、肌を落ち着かせる植物エキス'},
+        ]
+      },
+      {
+        name: 'LDM（超音波導入）',
+        desc: '局所動態マイクロマッサージ（LDM）テクノロジーにより、超音波が皮膚深部の細胞を活性化。炎症を鎮静しながら線維芽細胞を刺激してコラーゲン産生を促します。肌に優しく、乾燥肌・敏感肌・エイジングケアに幅広く対応します。',
+        worries: ['ハリ・コラーゲン不足', '炎症・ニキビ鎮静', '乾燥・敏感肌のケア', 'エイジングケア全般', 'スキンケアをしっかりしている方'],
+        ingredients: [
+          {name:'超音波（8MHz）', desc:'深部まで届く高周波で線維芽細胞を活性化・コラーゲン産生を促進'},
+          {name:'成長因子（EGF/FGF）', desc:'肌細胞の修復・再生をサポートする生体活性成分'},
+          {name:'ヒアルロン酸', desc:'超音波導入で角質層の奥まで水分を届ける'},
+        ]
+      },
+    ]
+  }
+];
+
+function showMenuList(){
+  let html = `
+    <div class="menu-list-header fade-up">
+      <h2>メニュー紹介</h2>
+      <p>＆meの5つのメニューの特徴と<br>おすすめの肌悩みをご紹介します</p>
+    </div>
+  `;
+  menuListData.forEach(group => {
+    html += `<div class="menu-group-label">${group.groupLabel}</div>`;
+    group.items.forEach((item, i) => {
+      html += `
+        <div class="menu-detail-card" id="mdc-${group.group}-${i}" onclick="toggleCard('mdc-${group.group}-${i}')">
+          <div class="menu-detail-head">
+            <div class="menu-detail-name">${item.name}</div>
+            <div class="menu-detail-arrow">
+              <svg viewBox="0 0 12 12"><polyline points="2,4 6,8 10,4"/></svg>
+            </div>
+          </div>
+          <div class="menu-detail-body">
+            <div class="menu-detail-desc">${item.desc}</div>
+            <div class="worry-box">
+              <div class="worry-title">こんな肌悩みにおすすめ ✨</div>
+              <div class="worry-tags">${item.worries.map(w=>`<span class="worry-tag">${w}</span>`).join('')}</div>
+            </div>
+            <div class="detail-ing-box">
+              <div class="ing-title">主な成分・アプローチ</div>
+              ${item.ingredients.map(i=>`<div class="ing-item"><div class="ing-name">${i.name}</div><div class="ing-desc">${i.desc}</div></div>`).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  });
+  html += `<button class="back-to-result-btn" onclick="showResult()">← 診断結果に戻る</button>`;
+
+  document.getElementById('quiz-area').innerHTML = html;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function toggleCard(id){
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+
+function restart(){ current=0; answers={}; multiSel={}; renderQ(0); window.scrollTo({top:0,behavior:'smooth'}); }
+
+renderQ(0);
+</script>
+</body>
+</html>
